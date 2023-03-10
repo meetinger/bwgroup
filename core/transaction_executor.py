@@ -1,5 +1,6 @@
 import asyncio
 import concurrent.futures
+import logging
 import threading
 from collections import defaultdict
 
@@ -11,8 +12,11 @@ from db.enums.transactions_enums import TransactionStatus
 from db.models import Transaction
 
 
+logger = logging.getLogger(__name__)
+
 def process_transaction(transaction: Transaction, db: Session):
     """Выполнить транзакцию"""
+    logger.debug(msg=f'Executing transaction {transaction.id}...')
     result = None
     try:
         result = users_cruds.change_user_balance_by_delta(user_id=transaction.user_id, delta=transaction.delta,
@@ -20,8 +24,10 @@ def process_transaction(transaction: Transaction, db: Session):
     except ValueError:
         result = None
     if result is not None:
+        logger.debug(msg=f'Executing transaction {transaction.id} successful')
         return transactions_cruds.change_transaction_status(transaction_id=transaction.id,
                                                             status=TransactionStatus.SUCCESSFUL, db=db)
+    logger.debug(msg=f'Executing transaction {transaction.id} rejected')
     return transactions_cruds.change_transaction_status(transaction_id=transaction.id,
                                                         status=TransactionStatus.REJECTED, db=db)
 
@@ -37,32 +43,39 @@ class TransactionExecutor(threading.Thread):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs, daemon=True)
         self.is_stop = False
-        self.transactions_user_buf = defaultdict(dict)  # у каждого пользователя своя очередь запросов в этом словаре
+        self.transactions_users_queues = defaultdict(dict)  # у каждого пользователя своя очередь запросов в словаре
 
     def fetch_transactions(self):
+        logger.debug(msg='Fetching transactions...')
         with get_db_ctx() as db:
             fetched = transactions_cruds.get_transactions_by_status(status=TransactionStatus.PENDING, db=db)
             for transaction in fetched:
-                self.transactions_user_buf[transaction.user_id][transaction.id] = transaction
+                self.transactions_users_queues[transaction.user_id][transaction.id] = transaction
 
     def set_stop(self, val: bool):
         self.is_stop = val
 
     def add_transaction(self, transaction_db: Transaction):
-        self.transactions_user_buf[transaction_db.user_id][transaction_db.id] = transaction_db
+        logger.debug(msg='Add transaction to ')
+        self.transactions_users_queues[transaction_db.user_id][transaction_db.id] = transaction_db
 
     async def _run(self):
         while not self.is_stop:
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                futures = []
-                for user_id, transactions in self.transactions_user_buf.items():
-                    futures.append(executor.submit(process_users_transactions, transactions=transactions))
-                for future in concurrent.futures.as_completed(futures):
-                    pass
-            self.transactions_user_buf.clear()
+            logger.debug(msg='Transaction Executor iteration...')
+            try:
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    futures = []
+                    for user_id, transactions in self.transactions_users_queues.items():
+                        futures.append(executor.submit(process_users_transactions, transactions=transactions))
+                    if futures:
+                        concurrent.futures.wait(futures)
+                self.transactions_users_queues.clear()
+            except Exception as e:
+                logger.error(msg=f'Transaction Executor error! {e}', exc_info=e)
             await asyncio.sleep(1)
 
     def run(self) -> None:
+        logger.debug(msg=f'Starting Transaction Executor...')
         loop = asyncio.new_event_loop()
         loop.run_until_complete(self._run())
 

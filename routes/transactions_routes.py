@@ -1,4 +1,5 @@
 import datetime as dt
+import logging
 from typing import Optional
 from decimal import Decimal
 
@@ -18,6 +19,7 @@ from schemas.transactions_schemas import TransactionOut, TransactionIn, Transact
 
 router = APIRouter(prefix="/transactions", tags=['transactions'])
 
+logger = logging.getLogger(__name__)
 
 @router.get('/', response_model=list[TransactionOut],
             responses=transactions_routes_examples.current_user_transactions_list)
@@ -26,6 +28,7 @@ async def current_user_transactions_list(limit: Optional[int] = 5,
                                          db: Session = Depends(get_db)):
     """Получение информации о текущем пользователе"""
     transactions_db = transactions_cruds.get_last_user_transactions(limit=limit, current_user=current_user, db=db)
+    logger.info(msg=f'User {current_user.id} get transactions list')
     return [sqlalchemy_to_pydantic_or_dict(TransactionOut, transaction) for transaction in transactions_db]
 
 
@@ -39,5 +42,6 @@ async def create_transaction(transaction_delta: TransactionDelta = Body(examples
     transaction_in = TransactionIn(delta=Decimal(transaction_delta.delta), datetime=dt.datetime.utcnow(), status=TransactionStatus.PENDING,
                                    user_id=current_user.id)
     transaction_db = transactions_cruds.create_new_transaction(transaction=transaction_in, current_user=current_user, db=db)
+    logger.info(msg=f'User {current_user.id} created transaction {transaction_db.id}')
     transaction_executor.add_transaction(transaction_db)
     return sqlalchemy_to_pydantic_or_dict(TransactionOut, transaction_db)
