@@ -11,6 +11,7 @@ class User(Base):
     id = Column(BigInteger, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
     name = Column(String, index=True)
+    hashed_password = Column(String)
 
     balance = Column(Numeric)
     users_transactions = relationship('Transaction', back_populates='user')

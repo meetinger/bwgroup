@@ -1,11 +1,24 @@
-from decimal import Decimal
+import datetime as dt
 
+from decimal import Decimal
 from pydantic import BaseModel, Field
 
-class TransactionOut(BaseModel):
-    """Схема транзакции"""
-    id: int = Field(description='id транзакции')
-    user_id: int = Field(description='id пользователя')
+from db.enums.transactions_enums import TransactionStatus
+
+
+class TransactionIn(BaseModel):
+    """Входящая схема транзакции"""
     delta: Decimal = Field(description='Изменение баланса')
-    status: str = Field(description='Статус транзакции')
+    datetime: dt.datetime = Field(description='Дата и время транзакции(UTC)')
+    status: TransactionStatus = Field(description='Статус транзакции')
+
+
+class TransactionOut(TransactionIn):
+    """Схема транзакции, уходящая клиентам"""
+    id: int = Field(description='id транзакции')
+
+
+class TransactionFull(TransactionOut):
+    """Полная схема транзакции"""
+    user_id: int = Field(description='id пользователя')
 

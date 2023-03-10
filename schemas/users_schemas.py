@@ -1,5 +1,7 @@
 from pydantic import EmailStr, BaseModel, Field
 
+from schemas.transactions_schemas import TransactionOut
+
 
 class UserBase(BaseModel):
     """Базовая схема пользователя"""
@@ -7,17 +9,13 @@ class UserBase(BaseModel):
     name: str = Field(description='Имя пользователя')
 
 
-class UserEmail(UserBase):
-    """Схема пользователя с email"""
-    email: EmailStr = Field(description='Email пользователя')
 
-
-class UserFull(UserEmail):
+class UserFull(UserBase):
     """Полная схема пользователя"""
     id: int = Field(description='id пользователя')
 
 
-class UserIn(UserEmail):
+class UserIn(UserBase):
     """Схема пользователя которая приходит от клиентов"""
     password: str = Field(description='Пароль пользователя')
 
@@ -25,3 +23,16 @@ class UserIn(UserEmail):
 class UserOut(UserFull):
     """Схема пользователя которая уходит клиентам"""
     ...
+    # last_transactions: list[TransactionOut] = Field(description='Последние 5 транзакций')
+
+
+class Token(BaseModel):
+    """Схема токена"""
+    access_token: str = Field(description='Access токен')
+    refresh_token: str = Field(description='Refresh токен')
+    token_type: str = Field(description='Тип токена(Bearer)')
+
+
+class RefreshTokenIn(BaseModel):
+    """Refresh токен"""
+    refresh_token: str = Field(description='Refresh токен')
