@@ -3,6 +3,7 @@ from logging.config import dictConfig
 from fastapi import FastAPI
 
 from core.settings import settings
+from core.transaction_executor import transaction_executor
 from routes import auth_routes, users_routes, transactions_routes
 
 dictConfig(settings.LOGGER_CONFIG)
@@ -27,3 +28,6 @@ app = FastAPI(openapi_tags=tags_metadata)
 app.include_router(auth_routes.router)
 app.include_router(users_routes.router)
 app.include_router(transactions_routes.router)
+
+transaction_executor.fetch_transactions()
+transaction_executor.start()

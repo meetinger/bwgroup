@@ -1,6 +1,9 @@
-from sqlalchemy import desc
-from sqlalchemy.orm import Session
+from typing import Type, Any
 
+from sqlalchemy import desc
+from sqlalchemy.orm import Session, Query
+
+from db.enums.transactions_enums import TransactionStatus
 from db.models import Transaction, User
 from schemas.transactions_schemas import TransactionIn
 
@@ -18,3 +21,17 @@ def get_last_user_transactions(limit: int, current_user: User, db: Session) -> l
     """Получить последние транзакции текущего пользователя"""
     transactions = db.query(Transaction).filter_by(user_id=current_user.id).order_by(desc(Transaction.datetime)).limit(limit).all()
     return transactions
+
+
+def change_transaction_status(transaction_id: int, status: TransactionStatus, db: Session) -> Transaction | None:
+    """Изменить статус транзакции"""
+    transaction_db = db.query(Transaction).filter_by(id=transaction_id).first()
+    transaction_db.status = status
+    db.commit()
+    return transaction_db
+
+
+def get_transactions_by_status(status: TransactionStatus, db: Session) -> list:
+    """Получить транзакции с опр. статусом"""
+    transactions_db = db.query(Transaction).filter_by(status=status).all()
+    return transactions_db

@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from core.security import PasswordUtils, TokenUtils
 from core.utils.misc_utils import sqlalchemy_to_pydantic_or_dict
-from db.crud.users_cruds import create_new_user, get_user
+from db.crud.users_cruds import create_new_user, get_user_by_username
 from db.database import get_db
 
 from routes.docs_examples import auth_routes_examples
@@ -39,7 +39,7 @@ def get_current_user_from_token(token: str = Depends(oauth2_scheme),
     except Exception as e:
         logger.error(msg='Error while getting user from token', exc_info=e)
         raise credentials_exception
-    user = get_user(username=username, db=db)
+    user = get_user_by_username(username=username, db=db)
     if user is None:
         raise credentials_exception
     return user
@@ -47,7 +47,7 @@ def get_current_user_from_token(token: str = Depends(oauth2_scheme),
 
 def authenticate_user(username: str, password: str, db: Session) -> sqlalchemy.orm.query.Query | bool:
     """Аутентификация пользователя"""
-    user = get_user(username=username, db=db)
+    user = get_user_by_username(username=username, db=db)
     if not user:
         return False
     if not PasswordUtils.verify_password(password, user.hashed_password):
@@ -59,7 +59,7 @@ def authenticate_user(username: str, password: str, db: Session) -> sqlalchemy.o
 async def register(user: UserIn = Body(examples=users_schemas_examples.user_in_examples),
                    db: Session = Depends(get_db)):
     """Эндпоинт регистрации пользователя"""
-    if get_user(username=user.username, db=db) is not None:
+    if get_user_by_username(username=user.username, db=db) is not None:
         e = HTTPException(status_code=409, detail='This username already exist!')
         logger.debug(msg='This username already exist!', exc_info=e)
         raise e
@@ -102,7 +102,7 @@ async def refresh_tokens(token: RefreshTokenIn = Body(examples=users_schemas_exa
         raise HTTPException(status_code=403, detail='Token expired')
     except Exception as e:
         raise credentials_exception
-    user = get_user(username=username, db=db)
+    user = get_user_by_username(username=username, db=db)
     if user is None:
         raise credentials_exception
     try:
