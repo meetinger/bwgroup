@@ -5,6 +5,7 @@ user_in_examples = {
         "value": {
             "username": "example_username",
             "name": "Example Name",
+            "balance": "39.99",
             "password": "a_very_strong_password"
         }
     }

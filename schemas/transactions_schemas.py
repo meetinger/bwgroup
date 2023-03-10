@@ -22,3 +22,9 @@ class TransactionFull(TransactionOut):
     """Полная схема транзакции"""
     user_id: int = Field(description='id пользователя')
 
+class TransactionDelta(BaseModel):
+    """
+    Изменение баланса
+    Cтроковое представление delta нужно для того, чтобы избежать подобного погрешности с плавающей запятой
+    """
+    delta: str = Field(description="Изменение баланса")

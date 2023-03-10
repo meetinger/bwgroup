@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from sqlalchemy import Column, String, BigInteger, Numeric
 from sqlalchemy.orm import relationship
 
@@ -13,5 +15,5 @@ class User(Base):
     name = Column(String, index=True)
     hashed_password = Column(String)
 
-    balance = Column(Numeric)
+    balance = Column(Numeric, default=Decimal("0"))
     users_transactions = relationship('Transaction', back_populates='user')

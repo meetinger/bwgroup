@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from pydantic import EmailStr, BaseModel, Field
 
 from schemas.transactions_schemas import TransactionOut
@@ -13,6 +15,7 @@ class UserBase(BaseModel):
 class UserFull(UserBase):
     """Полная схема пользователя"""
     id: int = Field(description='id пользователя')
+    balance: Decimal = Field(description='Баланс пользователя')
 
 
 class UserIn(UserBase):

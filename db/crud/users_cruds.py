@@ -1,4 +1,4 @@
-from sqlalchemy.ext.asyncio import AsyncSession
+from decimal import Decimal
 from sqlalchemy.orm import Session
 
 from core.security import PasswordUtils
@@ -11,6 +11,7 @@ def create_new_user(user: UserIn, db: Session):
     user_db = User(username=user.username,
                    name=user.name,
                    hashed_password=PasswordUtils.hash_password(user.password),
+                   balance=Decimal("0")
                    )
     db.add(user_db)
     db.commit()
