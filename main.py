@@ -1,13 +1,33 @@
+from logging.config import dictConfig
+
 from fastapi import FastAPI
 
-app = FastAPI()
+from core.settings import settings
+from core.transaction_executor import transaction_executor
+from routes import auth_routes, users_routes, transactions_routes
 
+dictConfig(settings.LOGGER_CONFIG)
 
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
+tags_metadata = [
+    {
+        "name": "auth",
+        "description": "Регистрация и аутентификация"
+    },
+    {
+        "name": "users",
+        "description": "Получение пользовательской информации"
+    },
+    {
+        "name": "transactions",
+        "description": "Операции с транзакциями"
+    },
+]
 
+app = FastAPI(openapi_tags=tags_metadata)
 
-@app.get("/hello/{name}")
-async def say_hello(name: str):
-    return {"message": f"Hello {name}"}
+app.include_router(auth_routes.router)
+app.include_router(users_routes.router)
+app.include_router(transactions_routes.router)
+
+transaction_executor.fetch_transactions()
+transaction_executor.start()

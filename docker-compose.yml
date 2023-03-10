@@ -1,0 +1,55 @@
+version: "3.3"
+services:
+  postgres_db:
+    container_name: bw_postgres_container
+    image: postgres:15.1
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      PGDATA: "pgdata"
+    volumes:
+      - ./postgres:/postgres
+    ports:
+      - ${DB_PORT}:5432
+    networks:
+      - postgres
+
+  migration:
+    build:
+      context: "."
+      dockerfile: Dockerfile
+    env_file:
+      - .env.docker
+    depends_on:
+      - postgres_db
+    volumes:
+      - .:/docker_app
+    networks:
+      - postgres
+    command: alembic upgrade head
+
+  uvicorn:
+    build:
+      context: "."
+      dockerfile: Dockerfile
+      args:
+        HTTP_PORT: ${HTTP_PORT}
+    container_name: uvicorn_server
+    restart: always
+    env_file:
+      - .env.docker
+    depends_on:
+      - postgres_db
+      - migration
+    volumes:
+      - .:/docker_app
+    ports:
+      - ${HTTP_PORT}:${HTTP_PORT}
+    networks:
+      - postgres
+    command: uvicorn main:app --host 0.0.0.0 --port ${HTTP_PORT}
+
+networks:
+  postgres:
+    driver: bridge
