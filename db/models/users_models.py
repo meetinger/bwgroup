@@ -16,4 +16,4 @@ class User(Base):
     hashed_password = Column(String)
 
     balance = Column(Numeric, default=Decimal("0"))
-    users_transactions = relationship('Transaction', back_populates='user')
+    users_transactions = relationship('Transaction', back_populates='user')  # очередь запросов пользователя

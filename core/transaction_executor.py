@@ -37,7 +37,7 @@ class TransactionExecutor(threading.Thread):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs, daemon=True)
         self.is_stop = False
-        self.transactions_user_buf = defaultdict(dict)
+        self.transactions_user_buf = defaultdict(dict)  # у каждого пользователя своя очередь запросов в этом словаре
 
     def fetch_transactions(self):
         with get_db_ctx() as db:
