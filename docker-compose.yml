@@ -1,0 +1,20 @@
+version: "3.3"
+services:
+  postgres_db:
+    container_name: bw_postgres_container
+    image: postgres:15.1
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      PGDATA: "pgdata"
+    volumes:
+      - ./postgres:/postgres
+    ports:
+      - ${DB_PORT}:5432
+    networks:
+      - postgres
+
+networks:
+  postgres:
+    driver: bridge
