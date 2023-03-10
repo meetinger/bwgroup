@@ -33,6 +33,7 @@ def process_transaction(transaction: Transaction, db: Session):
 
 
 def process_users_transactions(transactions: dict):
+    """Выполнить транзакции пользователя"""
     with get_db_ctx() as db:
         return [process_transaction(transaction, db=db) for transaction in transactions.values()]
 
@@ -46,6 +47,7 @@ class TransactionExecutor(threading.Thread):
         self.transactions_users_queues = defaultdict(dict)  # у каждого пользователя своя очередь запросов в словаре
 
     def fetch_transactions(self):
+        """Получить все транзакции и распределить их по очередям"""
         logger.debug(msg='Fetching transactions...')
         with get_db_ctx() as db:
             fetched = transactions_cruds.get_transactions_by_status(status=TransactionStatus.PENDING, db=db)
@@ -56,10 +58,12 @@ class TransactionExecutor(threading.Thread):
         self.is_stop = val
 
     def add_transaction(self, transaction_db: Transaction):
-        logger.debug(msg='Add transaction to ')
+        """Добавить транзакцию в очередь"""
+        logger.debug(msg='Add transaction to Executor')
         self.transactions_users_queues[transaction_db.user_id][transaction_db.id] = transaction_db
 
     async def _run(self):
+        """Корутина потока"""
         while not self.is_stop:
             logger.debug(msg='Transaction Executor iteration...')
             try:
@@ -75,6 +79,7 @@ class TransactionExecutor(threading.Thread):
             await asyncio.sleep(1)
 
     def run(self) -> None:
+        """Запустить Executor"""
         logger.debug(msg=f'Starting Transaction Executor...')
         loop = asyncio.new_event_loop()
         loop.run_until_complete(self._run())
